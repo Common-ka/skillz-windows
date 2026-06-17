@@ -102,23 +102,43 @@ export default function App() {
   }, [platforms]);
 
   // Aggregate all items
+  // Helper to determine platformId of a skill based on its path
+  const getSkillPlatformId = (skillPath) => {
+    const lowerPath = (skillPath || '').toLowerCase();
+    if (lowerPath.includes('.codex')) return 'codex';
+    if (lowerPath.includes('.gemini') || lowerPath.includes('antigravity')) return 'antigravity';
+    if (lowerPath.includes('.claude')) return 'claude';
+    if (lowerPath.includes('.cursor')) return 'cursor';
+    if (lowerPath.includes('code') || lowerPath.includes('vscode')) return 'vscode';
+    return null;
+  };
+
+  const getPlatformAssetCount = (platformId) => {
+    const mcpCount = (platformServers[platformId] || []).length;
+    const skillCount = skills.filter(s => getSkillPlatformId(s.path) === platformId).length;
+    return mcpCount + skillCount;
+  };
+
+  // Aggregate all items
   const getAllItems = () => {
     const list = [];
     
     // Add skills
     if (activeSection === 'all' || activeSection === 'skills') {
-      if (!activePlatform) {
-        skills.forEach(s => {
-          list.push({
-            id: `skill-${s.path}`,
-            type: 'skill',
-            name: s.name,
-            desc: s.description || s.body.slice(0, 100),
-            tags: s.tags || [],
-            raw: s
-          });
+      skills.forEach(s => {
+        const skillPlatformId = getSkillPlatformId(s.path);
+        if (activePlatform && skillPlatformId !== activePlatform) return;
+
+        list.push({
+          id: `skill-${s.path}`,
+          type: 'skill',
+          name: s.name,
+          desc: s.description || s.body.slice(0, 100),
+          tags: [...(s.tags || []), ...(skillPlatformId ? [platforms.find(p => p.id === skillPlatformId)?.label].filter(Boolean) : ['shared'])],
+          raw: s,
+          platformId: skillPlatformId
         });
-      }
+      });
     }
 
     // Add MCP servers
@@ -297,7 +317,7 @@ export default function App() {
           <h3 className="section-label">Library</h3>
           <ul className="nav-list">
             <li 
-              className={`nav-item ${activeSection === 'all' && !activePlatform ? 'active' : ''}`}
+              className={`nav-item ${activeSection === 'all' ? 'active' : ''}`}
               onClick={() => { setActiveSection('all'); setActivePlatform(null); setSelectedItem(null); setIsCreatingNew(null); }}
             >
               <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -306,7 +326,7 @@ export default function App() {
             </li>
             <li 
               className={`nav-item ${activeSection === 'skills' ? 'active' : ''}`}
-              onClick={() => { setActiveSection('skills'); setActivePlatform(null); setSelectedItem(null); setIsCreatingNew(null); }}
+              onClick={() => { setActiveSection('skills'); setSelectedItem(null); setIsCreatingNew(null); }}
             >
               <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <FileText size={16} /> Skillz
@@ -314,8 +334,8 @@ export default function App() {
               <span className="pill">{skills.length}</span>
             </li>
             <li 
-              className={`nav-item ${activeSection === 'mcps' && !activePlatform ? 'active' : ''}`}
-              onClick={() => { setActiveSection('mcps'); setActivePlatform(null); setSelectedItem(null); setIsCreatingNew(null); }}
+              className={`nav-item ${activeSection === 'mcps' ? 'active' : ''}`}
+              onClick={() => { setActiveSection('mcps'); setSelectedItem(null); setIsCreatingNew(null); }}
             >
               <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Cpu size={16} /> MCP Servers
@@ -337,8 +357,7 @@ export default function App() {
                 className={`platform-row nav-item ${activePlatform === p.id ? 'active' : ''}`}
                 style={{ cursor: 'pointer' }}
                 onClick={() => {
-                  setActivePlatform(p.id);
-                  setActiveSection('mcps');
+                  setActivePlatform(activePlatform === p.id ? null : p.id);
                   setSelectedItem(null);
                   setIsCreatingNew(null);
                 }}
@@ -348,7 +367,7 @@ export default function App() {
                   {p.label}
                 </span>
                 <span className="pill" style={{ opacity: p.exists ? 1 : 0.4 }}>
-                  {(platformServers[p.id] || []).length}
+                  {getPlatformAssetCount(p.id)}
                 </span>
               </div>
             ))}
