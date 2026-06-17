@@ -107,25 +107,18 @@ export default function App() {
     
     // Add skills
     if (activeSection === 'all' || activeSection === 'skills') {
-      skills.forEach(s => {
-        let skillPlatform = 'global';
-        if (s.path.toLowerCase().includes('.codex')) {
-          skillPlatform = 'codex';
-        } else if (s.path.toLowerCase().includes('.agents') || s.path.toLowerCase().includes('.antigravity')) {
-          skillPlatform = 'antigravity';
-        }
-
-        if (activePlatform && activePlatform !== skillPlatform) return;
-
-        list.push({
-          id: `skill-${s.path}`,
-          type: 'skill',
-          name: s.name,
-          desc: s.description || s.body.slice(0, 100),
-          tags: [...(s.tags || []), skillPlatform === 'codex' ? 'Codex' : skillPlatform === 'antigravity' ? 'Antigravity' : 'Global'],
-          raw: s
+      if (!activePlatform) {
+        skills.forEach(s => {
+          list.push({
+            id: `skill-${s.path}`,
+            type: 'skill',
+            name: s.name,
+            desc: s.description || s.body.slice(0, 100),
+            tags: s.tags || [],
+            raw: s
+          });
         });
-      });
+      }
     }
 
     // Add MCP servers
@@ -326,6 +319,9 @@ export default function App() {
             >
               <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Cpu size={16} /> MCP Servers
+              </span>
+              <span className="pill">
+                {Object.values(platformServers).reduce((acc, sList) => acc + (sList?.length || 0), 0)}
               </span>
             </li>
           </ul>
