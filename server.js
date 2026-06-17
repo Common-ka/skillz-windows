@@ -146,10 +146,15 @@ function parseCodexToml(content) {
         const rawVal = parts.slice(1).join('=').trim();
         let val = rawVal.replace(/^['"]|['"]$/g, '');
         if (rawVal.startsWith('[') && rawVal.endsWith(']')) {
-          try {
-            val = JSON.parse(rawVal.replace(/'/g, '"'));
-          } catch (e) {
-            val = rawVal;
+          const matches = [...rawVal.matchAll(/(?:'([^']*)'|"([^"]*)")/g)];
+          if (matches.length > 0) {
+            val = matches.map(m => m[1] || m[2] || '');
+          } else {
+            try {
+              val = JSON.parse(rawVal.replace(/'/g, '"'));
+            } catch (e) {
+              val = rawVal;
+            }
           }
         } else if (rawVal === 'true') {
           val = true;
@@ -272,10 +277,24 @@ function readMcpConfig(platformId) {
     const configRoot = p.format === 'json-servers' ? (data.servers || {}) : (data.mcpServers || {});
 
     for (const [name, details] of Object.entries(configRoot)) {
+      let serverArgs = details.args || [];
+      if (typeof serverArgs === 'string') {
+        // Handle single string or raw array strings
+        if (serverArgs.startsWith('[') && serverArgs.endsWith(']')) {
+          const matches = [...serverArgs.matchAll(/(?:'([^']*)'|"([^"]*)")/g)];
+          if (matches.length > 0) {
+            serverArgs = matches.map(m => m[1] || m[2] || '');
+          } else {
+            serverArgs = [serverArgs];
+          }
+        } else {
+          serverArgs = [serverArgs];
+        }
+      }
       servers[name] = {
         name,
         command: details.command,
-        args: details.args || [],
+        args: serverArgs,
         env: details.env || {},
         disabled: details.disabled === true || details.enabled === false,
         url: details.url,

@@ -133,7 +133,7 @@ export default function App() {
             name: s.name,
             platformId: p.id,
             platformLabel: p.label,
-            desc: s.url ? `HTTP URL: ${s.url}` : `Cmd: ${s.command} ${(s.args || []).join(' ')}`,
+            desc: s.url ? `HTTP URL: ${s.url}` : `Cmd: ${s.command} ${Array.isArray(s.args) ? s.args.join(' ') : (typeof s.args === 'string' ? s.args : '')}`,
             tags: [p.label, s.url ? 'http' : 'command'],
             disabled: s.disabled === true,
             raw: s
