@@ -107,18 +107,25 @@ export default function App() {
     
     // Add skills
     if (activeSection === 'all' || activeSection === 'skills') {
-      if (!activePlatform) {
-        skills.forEach(s => {
-          list.push({
-            id: `skill-${s.path}`,
-            type: 'skill',
-            name: s.name,
-            desc: s.description || s.body.slice(0, 100),
-            tags: s.tags || [],
-            raw: s
-          });
+      skills.forEach(s => {
+        let skillPlatform = 'global';
+        if (s.path.toLowerCase().includes('.codex')) {
+          skillPlatform = 'codex';
+        } else if (s.path.toLowerCase().includes('.agents') || s.path.toLowerCase().includes('.antigravity')) {
+          skillPlatform = 'antigravity';
+        }
+
+        if (activePlatform && activePlatform !== skillPlatform) return;
+
+        list.push({
+          id: `skill-${s.path}`,
+          type: 'skill',
+          name: s.name,
+          desc: s.description || s.body.slice(0, 100),
+          tags: [...(s.tags || []), skillPlatform === 'codex' ? 'Codex' : skillPlatform === 'antigravity' ? 'Antigravity' : 'Global'],
+          raw: s
         });
-      }
+      });
     }
 
     // Add MCP servers
