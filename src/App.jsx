@@ -375,7 +375,7 @@ export default function App() {
             <input 
               type="text" 
               className="form-input" 
-              placeholder="Workspace relative or absolute path" 
+              placeholder="Absolute folder path (e.g. C:\MyProject\.agents\skills)" 
               value={newRootInput}
               onChange={(e) => setNewRootInput(e.target.value)}
               style={{ padding: '6px 8px', fontSize: '0.78rem' }}
