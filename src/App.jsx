@@ -301,6 +301,38 @@ export default function App() {
 
   const filteredItems = getAllItems();
 
+  // Group items by platform
+  const groupItems = (items) => {
+    const groups = {};
+    items.forEach(item => {
+      const key = item.platformId || 'shared';
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(item);
+    });
+    return groups;
+  };
+
+  const grouped = groupItems(filteredItems);
+  const renderGroups = [];
+
+  platforms.forEach(p => {
+    if (grouped[p.id] && grouped[p.id].length > 0) {
+      renderGroups.push({
+        id: p.id,
+        label: p.label,
+        items: grouped[p.id]
+      });
+    }
+  });
+
+  if (grouped['shared'] && grouped['shared'].length > 0) {
+    renderGroups.push({
+      id: 'shared',
+      label: 'Shared / Workspace',
+      items: grouped['shared']
+    });
+  }
+
   return (
     <div className="app-container">
       {/* 1. Sidebar */}
@@ -465,26 +497,33 @@ export default function App() {
             </button>
           )}
 
-          {filteredItems.map(item => (
-            <div 
-              key={item.id}
-              className={`list-card ${selectedItem?.id === item.id ? 'active' : ''} ${item.disabled ? 'disabled-card' : ''}`}
-              style={{ opacity: item.disabled ? 0.55 : 1 }}
-              onClick={() => { setSelectedItem(item); setIsCreatingNew(null); }}
-            >
-              <div className="card-title-row">
-                <span className="card-title">{item.name}</span>
-                <span className="pill" style={{ textTransform: 'uppercase', fontSize: '0.62rem', fontWeight: 700 }}>
-                  {item.type}
-                </span>
+          {renderGroups.map(group => (
+            <React.Fragment key={group.id}>
+              <div className="list-group-header">
+                {group.label}
               </div>
-              <p className="card-desc">{item.desc}</p>
-              <div className="card-footer">
-                {item.tags.map((tag, idx) => (
-                  <span key={idx} className={`pill ${idx === 0 && item.type === 'mcp' ? 'accent' : ''}`}>{tag}</span>
-                ))}
-              </div>
-            </div>
+              {group.items.map(item => (
+                <div 
+                  key={item.id}
+                  className={`list-card ${selectedItem?.id === item.id ? 'active' : ''} ${item.disabled ? 'disabled-card' : ''}`}
+                  style={{ opacity: item.disabled ? 0.55 : 1 }}
+                  onClick={() => { setSelectedItem(item); setIsCreatingNew(null); }}
+                >
+                  <div className="card-title-row">
+                    <span className="card-title">{item.name}</span>
+                    <span className="pill" style={{ textTransform: 'uppercase', fontSize: '0.62rem', fontWeight: 700 }}>
+                      {item.type}
+                    </span>
+                  </div>
+                  <p className="card-desc">{item.desc}</p>
+                  <div className="card-footer">
+                    {item.tags.map((tag, idx) => (
+                      <span key={idx} className={`pill ${idx === 0 && item.type === 'mcp' ? 'accent' : ''}`}>{tag}</span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </React.Fragment>
           ))}
 
           {filteredItems.length === 0 && (
