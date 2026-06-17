@@ -1,6 +1,6 @@
 # Skills Manager for Windows (skillz-windows)
 
-A local desktop web utility with a premium React frontend to view, edit, and manage local AI agent skills (`SKILL.md`) and MCP configuration files across VS Code, Rider, Cursor, Trae, Codex, Antigravity, and Claude Code on Windows.
+A local desktop web utility to view, edit, and manage local AI agent skills (`SKILL.md`) and MCP configuration files across VS Code, Rider, Cursor, Trae, Codex, Antigravity, and Claude Code on Windows.
 
 ## Features
 
