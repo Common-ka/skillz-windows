@@ -40,7 +40,7 @@ function getPlatformPaths() {
     },
     antigravity: {
       label: 'Antigravity',
-      configPath: path.join(appData, '..', '.gemini', 'antigravity-ide', 'mcp_config.json'),
+      configPath: path.join(userProfile, '.gemini', 'antigravity-ide', 'mcp_config.json'),
       format: 'json-mcpServers'
     },
     claude: {
@@ -297,7 +297,7 @@ function readMcpConfig(platformId) {
         args: serverArgs,
         env: details.env || {},
         disabled: details.disabled === true || details.enabled === false,
-        url: details.url,
+        url: details.url || details.serverUrl,
         type: details.type
       };
     }
@@ -341,7 +341,11 @@ function saveMcpConfig(platformId, servers) {
     for (const [name, s] of Object.entries(servers)) {
       const item = {};
       if (s.url) {
-        item.url = s.url;
+        if (platformId === 'antigravity') {
+          item.serverUrl = s.url;
+        } else {
+          item.url = s.url;
+        }
         if (s.type) item.type = s.type;
       } else {
         item.command = s.command;
@@ -373,30 +377,52 @@ function saveMcpConfig(platformId, servers) {
 }
 
 // Workspace Roots for SKILL.md scanning
-let indexedRoots = [path.join(process.env.USERPROFILE, '.agents', 'skills')];
+const userProfilePath = process.env.USERPROFILE || 'C:\\Users\\Default';
+let indexedRoots = [
+  path.join(userProfilePath, '.agents', 'skills'),
+  path.join(userProfilePath, '.codex', 'skills'),
+  path.join(userProfilePath, '.codex', 'vendor_imports', 'skills', 'skills', '.curated')
+];
 
 function scanSkills() {
   const skills = [];
   indexedRoots.forEach(root => {
     if (!fs.existsSync(root)) return;
     try {
-      const files = fs.readdirSync(root);
-      files.forEach(file => {
-        if (file.toLowerCase() === 'skill.md' || file.endsWith('.md')) {
-          const filePath = path.join(root, file);
-          const stat = fs.statSync(filePath);
-          if (stat.isFile()) {
-            const content = fs.readFileSync(filePath, 'utf8');
-            const { metadata, body } = parseFrontmatter(content);
-            skills.push({
-              name: metadata.name || path.basename(file, '.md'),
-              fileName: file,
-              path: filePath,
-              description: metadata.description || '',
-              tags: metadata.tags || [],
-              lastModified: stat.mtime,
-              body: body
-            });
+      const items = fs.readdirSync(root);
+      items.forEach(item => {
+        const itemPath = path.join(root, item);
+        const stat = fs.statSync(itemPath);
+
+        if (stat.isFile() && item.endsWith('.md')) {
+          const content = fs.readFileSync(itemPath, 'utf8');
+          const { metadata, body } = parseFrontmatter(content);
+          skills.push({
+            name: metadata.name || path.basename(item, '.md'),
+            fileName: item,
+            path: itemPath,
+            description: metadata.description || '',
+            tags: metadata.tags || [],
+            lastModified: stat.mtime,
+            body: body
+          });
+        } else if (stat.isDirectory()) {
+          const skillMdPath = path.join(itemPath, 'SKILL.md');
+          if (fs.existsSync(skillMdPath)) {
+            const skillStat = fs.statSync(skillMdPath);
+            if (skillStat.isFile()) {
+              const content = fs.readFileSync(skillMdPath, 'utf8');
+              const { metadata, body } = parseFrontmatter(content);
+              skills.push({
+                name: metadata.name || item,
+                fileName: 'SKILL.md',
+                path: skillMdPath,
+                description: metadata.description || '',
+                tags: metadata.tags || [],
+                lastModified: skillStat.mtime,
+                body: body
+              });
+            }
           }
         }
       });
